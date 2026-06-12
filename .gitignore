@@ -1,0 +1,11 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Model assets (file nang, khong commit)
+model_assets/
+
+# Editor
+.vscode/
+.idea/
