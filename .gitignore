@@ -9,3 +9,14 @@ model_assets/
 # Editor
 .vscode/
 .idea/
+
+# Virtual Environment
+.venv/
+.gradio/
+
+# Data and large files
+data/
+*.zip
+
+# Pytest cache
+.pytest_cache/

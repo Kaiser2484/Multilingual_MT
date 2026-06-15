@@ -315,7 +315,13 @@ def merge_and_save(
             # Đảm bảo không có tab ẩn trong câu (sẽ làm vỡ định dạng TSV)
             src = src.replace("\t", " ")
             tgt = tgt.replace("\t", " ")
+            
+            # Chiều Anh -> Ngôn ngữ đích
             all_lines.append(f"{token} {src}\t{tgt}\n")
+            
+            # Chiều ngược: Ngôn ngữ đích -> Anh
+            all_lines.append(f"<2en> {tgt}\t{src}\n")
+            
             count += 1
         logger.info("  └─ %-4s : %d dòng (token: %s)", lang.upper(), count, token)
 

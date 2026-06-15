@@ -1,0 +1,4 @@
+vocab_size=32000
+min_frequency=2
+corpus_file=data/processed/train_multilingual.txt
+special_tokens=['[PAD]', '[UNK]', '[BOS]', '[EOS]', '__src_en__', '__tgt_vi__', '__tgt_ja__', '__tgt_zh__']
