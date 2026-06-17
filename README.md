@@ -11,7 +11,6 @@ Giao diện trực quan được xây dựng trên nền tảng Web App (FastAPI
 - **Kiến trúc Transformer**: Xây dựng toàn bộ mạng Neural (Encoder, Decoder, Multi-Head Attention) bằng PyTorch thuần, không dùng framework có sẵn.
 - **Dịch 12 Chiều (Full Multi-way)**: Hỗ trợ tất cả các cặp ngôn ngữ nhờ Language Tags (`<2vi>`, `<2ja>`, `<2zh>`, `<2en>`) và cơ chế Self-Pivot qua Tiếng Anh.
 - **Beam Search Decoding**: Sử dụng Beam Search (beam=5, length penalty=0.7) thay vì Greedy, cho chất lượng dịch tốt hơn.
-- **Hoàn toàn Offline**: Không phụ thuộc `deep-translator` hay bất kỳ API dịch ngoài nào — tất cả đều dùng chính model của hệ thống.
 - **Giao diện thân thiện**: Web UI trực quan, tự động hoán đổi ngôn ngữ nguồn/đích, hỗ trợ phím tắt `Ctrl + Enter`.
 - **E2E Testing**: Tích hợp Playwright để kiểm thử tự động toàn bộ luồng giao diện UI.
 
@@ -61,6 +60,7 @@ Multilingual_MT/
 ## 🛠️ Cài Đặt (Installation)
 
 **1. Clone dự án và tạo môi trường ảo:**
+
 ```bash
 git clone https://github.com/Kaiser2484/Multilingual_MT.git
 cd Multilingual_MT
@@ -73,17 +73,20 @@ source .venv/bin/activate
 ```
 
 **2. Cài đặt các thư viện cần thiết:**
+
 ```bash
 pip install -r requirements.txt
 ```
 
 > **Lưu ý:** Các file model (`.pt`) được lưu trữ qua **Git LFS**. Nếu bạn chưa cài Git LFS, hãy chạy:
+>
 > ```bash
 > git lfs install
 > git lfs pull
 > ```
 
 **3. Tải trình duyệt cho E2E Test (nếu cần):**
+
 ```bash
 playwright install
 ```
@@ -116,6 +119,7 @@ Mô hình được huấn luyện trên **Kaggle** (Tesla T4 GPU) qua Notebook `
 4. Sau khi train xong, tải file checkpoint về và đặt vào thư mục `model_assets/`.
 
 **Checkpoint Averaging** (tổng hợp 5 checkpoint tốt nhất):
+
 ```python
 import glob, torch
 
@@ -138,18 +142,23 @@ torch.save({"model_state": avg_state}, 'model_assets/best_transformer_averaged.p
 ## 🧪 Đánh Giá & Kiểm Thử (Evaluation & Testing)
 
 **1. Chạy Evaluation Notebook (tính BLEU Score):**
+
 ```bash
 jupyter notebook notebooks/evaluate.ipynb
 ```
+
 Notebook tự động so sánh **BLEU Score** của Transformer vs LSTM Baseline trên tập test.
 
 **2. Chạy E2E Test (Playwright):**
 
 Đảm bảo API server đang chạy, sau đó:
+
 ```bash
 pytest tests/test_ui.py -v
 ```
+
 Chạy ở chế độ có giao diện (headed mode):
+
 ```bash
 pytest tests/test_ui.py --headed -v
 ```

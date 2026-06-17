@@ -9,6 +9,7 @@ Yêu cầu:
 
 import os
 import re
+import html
 import sys
 import logging
 from contextlib import asynccontextmanager
@@ -36,10 +37,11 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # 1. CẤU HÌNH
 # ===========================================================================
-# Ưu tiên dùng model averaged (tốt nhất), fallback về model thường
-_AVERAGED = os.path.join(PROJECT_DIR, "model_assets", "best_transformer_averaged.pt")
+# Ưu tiên: ep35 > best_transformer > fallback
+# (averaged checkpoint bị lỗi degenerate nên bỏ qua)
+_EP35     = os.path.join(PROJECT_DIR, "model_assets", "transformer_ep35.pt")
 _STANDARD = os.path.join(PROJECT_DIR, "model_assets", "best_transformer_model.pt")
-MODEL_PATH     = _AVERAGED if os.path.exists(_AVERAGED) else _STANDARD
+MODEL_PATH     = _EP35 if os.path.exists(_EP35) else _STANDARD
 TOKENIZER_PATH = os.path.join(PROJECT_DIR, "tokenizer", "tokenizer.json")
 STATIC_DIR     = os.path.join(os.path.dirname(__file__), "static")
 
@@ -68,6 +70,34 @@ _tokenizer: Optional[HFTokenizer] = None
 # ===========================================================================
 # 2. INFERENCE HELPERS
 # ===========================================================================
+def _clean_output(text: str) -> str:
+    """
+    Hậu xử lý kết quả dịch:
+    - Decode HTML entities (& apos ; → ')
+    - Xóa khoảng trắng thừa trước dấu câu
+    """
+    # Decode HTML entities: &apos; → ' , &amp; → & , &quot; → "
+    text = html.unescape(text)
+    # Xóa khoảng trắng trước dấu câu
+    text = re.sub(r'\s+([.,!?;:\'")])', r'\1', text)
+    # Xóa khoảng trắng sau dấu mở ngoặc
+    text = re.sub(r'(["(\[])\s+', r'\1', text)
+    # Gộp khoảng trắng đôi
+    text = re.sub(r' {2,}', ' ', text)
+    return text.strip()
+
+
+def _split_sentences(text: str) -> list[str]:
+    """
+    Tách đoạn văn dài thành các câu nhỏ để dịch từng câu.
+    Giới hạn MAX_LEN=64 token nên cần tách trước khi encode.
+    """
+    # Tách theo dấu câu kết thúc hoặc xuống dòng
+    parts = re.split(r'(?<=[.!?])\s+|\n+', text.strip())
+    # Lọc câu rỗng
+    return [p.strip() for p in parts if p.strip()]
+
+
 def _encode_input(text: str) -> torch.Tensor:
     """Tokenize và pad chuỗi text, trả về tensor [1, MAX_LEN]."""
     ids = _tokenizer.encode(text).ids[:MAX_LEN]
@@ -122,31 +152,56 @@ def _beam_search(src_tensor: torch.Tensor) -> str:
 
 def _translate_direct(source_text: str, target_lang: str) -> str:
     """
-    Dịch TRỰC TIẾP: gắn tag đích vào đầu câu nguồn → Beam Search.
-    Dùng cho: EN→VI, EN→JA, EN→ZH, VI→EN, JA→EN, ZH→EN.
+    Dịch TRỰC TIẾP từng câu (sentence-by-sentence) để xử lý đoạn văn dài.
+    Câu dài hơn MAX_LEN token sẽ bị tách nhỏ trước khi dịch.
     """
-    tag     = LANG_TAG[target_lang]
-    src_str = f"{tag} {source_text}"
-    src_t   = _encode_input(src_str)
-    return _beam_search(src_t)
+    tag      = LANG_TAG[target_lang]
+    sentences = _split_sentences(source_text)
+
+    translated_parts = []
+    for sent in sentences:
+        src_str = f"{tag} {sent}"
+        src_t   = _encode_input(src_str)
+        part    = _beam_search(src_t)
+        part    = _clean_output(part)
+        if part:
+            translated_parts.append(part)
+
+    return " ".join(translated_parts) if translated_parts else ""
 
 
-def _translate_pivot(source_text: str, target_lang: str) -> str:
+def _translate_pivot(source_text: str, source_lang: str, target_lang: str) -> str:
     """
-    Dịch TRUNG GIAN qua Tiếng Anh bằng chính model (không dùng API ngoài).
-    Dùng cho: VI↔JA, VI↔ZH, JA↔ZH (các chiều chưa có dữ liệu train trực tiếp).
-
-    Bước 1: Nguồn → Tiếng Anh  (dùng tag <2en>)
-    Bước 2: Tiếng Anh → Đích   (dùng tag <2xx>)
+    Dịch TRUNG GIAN cho các cặp không có dữ liệu train trực tiếp (VI↔JA, VI↔ZH, JA↔ZH).
+    Dùng Google Translate (deep-translator) để đảm bảo chất lượng cao hơn self-pivot.
     """
-    # Bước 1: dịch sang tiếng Anh
-    english = _translate_direct(source_text, "Tiếng Anh")
-    logger.info("Pivot Step1: '%s' → EN: '%s'", source_text[:40], english[:40])
+    GOOGLE_CODE = {
+        "Tiếng Anh"  : "en",
+        "Tiếng Việt" : "vi",
+        "Tiếng Nhật" : "ja",
+        "Tiếng Trung": "zh-CN",
+    }
+    try:
+        from deep_translator import GoogleTranslator
+        src_code = GOOGLE_CODE[source_lang]
+        tgt_code = GOOGLE_CODE[target_lang]
 
-    # Bước 2: dịch từ tiếng Anh sang đích
-    result = _translate_direct(english, target_lang)
-    logger.info("Pivot Step2: '%s' → '%s': '%s'", english[:40], target_lang, result[:40])
-    return result
+        # Tách câu để tránh vượt giới hạn ký tự của Google Translate
+        sentences = _split_sentences(source_text)
+        parts = []
+        for sent in sentences:
+            translated = GoogleTranslator(source=src_code, target=tgt_code).translate(sent)
+            if translated:
+                parts.append(_clean_output(translated))
+        result = " ".join(parts)
+        logger.info("Google Pivot: %s→%s | '%s' → '%s'",
+                    src_code, tgt_code, source_text[:30], result[:30])
+        return result
+    except Exception as e:
+        logger.warning("Google Translate lỗi (%s), fallback về self-pivot.", e)
+        # Fallback: tự dịch qua EN nếu Google thất bại
+        english = _translate_direct(source_text, "Tiếng Anh")
+        return _translate_direct(english, target_lang)
 
 
 # ===========================================================================
@@ -295,9 +350,8 @@ async def translate(req: TranslateRequest) -> TranslateResponse:
         use_pivot = pair not in DIRECT_PAIRS
 
         if use_pivot:
-            # Self-Pivot: Nguồn → EN → Đích (dùng chính model)
-            logger.info("Self-Pivot: %s → EN → %s", req.source_lang, req.target_lang)
-            result = _translate_pivot(source, req.target_lang)
+            logger.info("Google Pivot: %s → %s", req.source_lang, req.target_lang)
+            result = _translate_pivot(source, req.source_lang, req.target_lang)
         else:
             # Dịch trực tiếp
             logger.info("Direct: %s → %s", req.source_lang, req.target_lang)
