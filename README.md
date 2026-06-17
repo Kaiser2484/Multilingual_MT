@@ -1,6 +1,6 @@
 # Multilingual Machine Translation with Transformer
 
-Hệ thống dịch thuật máy đa ngôn ngữ (Multilingual Machine Translation) sử dụng kiến trúc Transformer tự xây dựng từ đầu (from scratch) bằng PyTorch. Hệ thống hỗ trợ dịch thuật **12 chiều** giữa 4 ngôn ngữ: Tiếng Anh, Tiếng Việt, Tiếng Nhật, và Tiếng Trung — hoàn toàn offline, không phụ thuộc bất kỳ API dịch thuật ngoài nào.
+Hệ thống dịch thuật máy đa ngôn ngữ (Multilingual Machine Translation) sử dụng kiến trúc Transformer tự xây dựng từ đầu (from scratch) bằng PyTorch. Hệ thống hỗ trợ dịch thuật **12 chiều** giữa 4 ngôn ngữ: Tiếng Anh, Tiếng Việt, Tiếng Nhật, và Tiếng Trung — với kiến trúc Hybrid: model tự xây dựng cho các chiều trực tiếp, Google Translate cho các chiều chéo.
 
 Giao diện trực quan được xây dựng trên nền tảng Web App (FastAPI + HTML/CSS/JS thuần).
 
@@ -20,12 +20,12 @@ Giao diện trực quan được xây dựng trên nền tảng Web App (FastAPI
 
 | Chiều | Phương thức | Mô tả |
 |-------|-------------|-------|
-| EN ↔ VI | Trực tiếp | Model dịch thẳng với tag `<2vi>` / `<2en>` |
-| EN ↔ JA | Trực tiếp | Model dịch thẳng với tag `<2ja>` / `<2en>` |
-| EN ↔ ZH | Trực tiếp | Model dịch thẳng với tag `<2zh>` / `<2en>` |
-| VI ↔ JA | Self-Pivot | VI → EN → JA (dùng chính model, 2 bước) |
-| VI ↔ ZH | Self-Pivot | VI → EN → ZH (dùng chính model, 2 bước) |
-| JA ↔ ZH | Self-Pivot | JA → EN → ZH (dùng chính model, 2 bước) |
+| EN ↔ VI | Model trực tiếp | Transformer dịch thẳng với tag `<2vi>` / `<2en>` |
+| EN ↔ JA | Model trực tiếp | Transformer dịch thẳng với tag `<2ja>` / `<2en>` |
+| EN ↔ ZH | Model trực tiếp | Transformer dịch thẳng với tag `<2zh>` / `<2en>` |
+| VI ↔ JA | Google Translate | Dịch trực tiếp qua deep-translator |
+| VI ↔ ZH | Google Translate | Dịch trực tiếp qua deep-translator |
+| JA ↔ ZH | Google Translate | Dịch trực tiếp qua deep-translator |
 
 ---
 

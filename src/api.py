@@ -73,16 +73,21 @@ _tokenizer: Optional[HFTokenizer] = None
 def _clean_output(text: str) -> str:
     """
     Hậu xử lý kết quả dịch:
-    - Decode HTML entities (& apos ; → ')
+    - Decode HTML entities có khoảng trắng (& apos ; → ')
     - Xóa khoảng trắng thừa trước dấu câu
     """
-    # Decode HTML entities: &apos; → ' , &amp; → & , &quot; → "
+    # Bước 1: Gộp spaced HTML entities: "& apos ;" → "&apos;"
+    # Model tokenize HTML entities thành các token riêng lẻ
+    text = re.sub(r'& (\w+) ;', r'&\1;', text)
+
+    # Bước 2: Unescape: &apos; → ' , &amp; → & , &quot; → "
     text = html.unescape(text)
-    # Xóa khoảng trắng trước dấu câu
-    text = re.sub(r'\s+([.,!?;:\'")])', r'\1', text)
-    # Xóa khoảng trắng sau dấu mở ngoặc
-    text = re.sub(r'(["(\[])\s+', r'\1', text)
-    # Gộp khoảng trắng đôi
+
+    # Bước 3: Xóa khoảng trắng trước dấu câu
+    text = re.sub(r"\s+([.,!?;:'\"])", r'\1', text)
+    # Bước 4: Xóa khoảng trắng sau dấu mở ngoặc
+    text = re.sub(r'([\[(])\s+', r'\1', text)
+    # Bước 5: Gộp khoảng trắng đôi
     text = re.sub(r' {2,}', ' ', text)
     return text.strip()
 
