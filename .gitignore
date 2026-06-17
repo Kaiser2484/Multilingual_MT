@@ -20,3 +20,7 @@ data/
 
 # Pytest cache
 .pytest_cache/
+
+# Private files
+*.xlsx
+*.xls
