@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Polyglot | Multilingual MT</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="background-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <main class="container">
+        <header class="header">
+            <div class="logo">
+                <i class="fa-solid fa-language"></i>
+                <h1>AI Polyglot</h1>
+            </div>
+            <p class="subtitle">Powered by Transformer Base & Self-Pivot Architecture</p>
+        </header>
+
+        <div class="translator-card">
+            <!-- Source Side -->
+            <div class="translator-panel source-panel">
+                <div class="panel-header">
+                    <select id="source-lang" class="lang-select">
+                        <option value="en">English (Anh)</option>
+                        <option value="vi">Vietnamese (Việt)</option>
+                        <option value="ja">Japanese (Nhật)</option>
+                        <option value="zh">Chinese (Trung)</option>
+                    </select>
+                </div>
+                <div class="panel-body">
+                    <textarea id="source-text" placeholder="Type text to translate..." spellcheck="false"></textarea>
+                </div>
+                <div class="panel-footer">
+                    <button class="action-btn" id="clear-btn" title="Clear text"><i class="fa-solid fa-trash"></i></button>
+                    <span class="char-count" id="char-count">0 / 5000</span>
+                </div>
+            </div>
+
+            <!-- Swap Button -->
+            <div class="swap-container">
+                <button id="swap-btn" class="swap-btn" title="Swap languages">
+                    <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                </button>
+            </div>
+
+            <!-- Target Side -->
+            <div class="translator-panel target-panel">
+                <div class="panel-header">
+                    <select id="target-lang" class="lang-select">
+                        <option value="vi">Vietnamese (Việt)</option>
+                        <option value="en">English (Anh)</option>
+                        <option value="ja">Japanese (Nhật)</option>
+                        <option value="zh">Chinese (Trung)</option>
+                    </select>
+                </div>
+                <div class="panel-body">
+                    <textarea id="target-text" placeholder="Translation will appear here..." readonly></textarea>
+                    <div id="loading-spinner" class="spinner-container hidden">
+                        <div class="spinner"></div>
+                        <span>Translating by AI...</span>
+                    </div>
+                </div>
+                <div class="panel-footer">
+                    <button class="action-btn" id="copy-btn" title="Copy to clipboard"><i class="fa-regular fa-copy"></i></button>
+                    <div class="badge" id="method-badge">Direct Model</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="action-center">
+            <button id="translate-btn" class="primary-btn">
+                <i class="fa-solid fa-bolt"></i> Translate Now
+            </button>
+        </div>
+    </main>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
